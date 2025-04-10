@@ -13,6 +13,7 @@ import com.google.gson.JsonParser;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.logging.Logger;
@@ -26,6 +27,7 @@ public class LogoutResource {
     @POST
     @Path("/")
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.TEXT_HTML)
     public Response doLogout(String tokenJson) {
         JsonObject jsonObject = JsonParser.parseString(tokenJson).getAsJsonObject();
 
@@ -59,7 +61,26 @@ public class LogoutResource {
 
             txn.commit();
             LOG.info("Logout successful for user: " + username);
-            return Response.ok("User \"" + username + "\" has been successfully logged out.").build();
+            String htmlResponse = "<!DOCTYPE html>\n"
+                    + "<html lang=\"en\">\n"
+                    + "<head>\n"
+                    + "  <meta charset=\"UTF-8\">\n"
+                    + "  <title>Logout Successful</title>\n"
+                    + "  <style>\n"
+                    + "    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f1f1f1; }\n"
+                    + "    .container { background-color: #fff; padding: 25px; border-radius: 5px; max-width: 700px; margin: auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }\n"
+                    + "    h1 { color: #333; }\n"
+                    + "    p { color: #666; }\n"
+                    + "  </style>\n"
+                    + "</head>\n"
+                    + "<body>\n"
+                    + "  <div class=\"container\">\n"
+                    + "    <h1>Goodbye, " + username + "!</h1>\n"
+                    + "    <p>You have been successfully logged out.</p>\n"
+                    + "  </div>\n"
+                    + "</body>\n"
+                    + "</html>";
+            return Response.ok(htmlResponse, MediaType.TEXT_HTML).build();
         } catch (Exception e) {
             if (txn.isActive())
                 txn.rollback();
