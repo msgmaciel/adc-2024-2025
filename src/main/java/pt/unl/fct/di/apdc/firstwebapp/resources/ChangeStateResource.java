@@ -25,6 +25,19 @@ public class ChangeStateResource {
 
     public ChangeStateResource() {}
 
+    private void removeUserTokens(String username, Transaction txn) {
+        Query<Entity> query = Query.newEntityQueryBuilder()
+                .setKind("Token")
+                .setFilter(StructuredQuery.PropertyFilter.eq("username", username))
+                .build();
+        QueryResults<Entity> tokenResults = txn.run(query);
+
+        while (tokenResults.hasNext()) {
+            Entity tokenEntity = tokenResults.next();
+            txn.delete(tokenEntity.getKey());
+        }
+    }
+
     @POST
     @Path("/")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -88,6 +101,9 @@ public class ChangeStateResource {
                         .entity(NOT_ENOUGH_PERMISSIONS)
                         .build();
             }
+
+            if (!AccountState.ACTIVE.getDescription().equals(state))
+                removeUserTokens(targetUsername, txn);
 
             String oldState = targetUser.getString("user_state");
 

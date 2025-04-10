@@ -7,6 +7,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import pt.unl.fct.di.apdc.firstwebapp.enums.AccountState;
 import pt.unl.fct.di.apdc.firstwebapp.enums.Role;
 import pt.unl.fct.di.apdc.firstwebapp.util.ChangeAttributesData;
 
@@ -52,6 +53,19 @@ public class ChangeAttributesResource {
             txn.put(Entity.newBuilder(tokenEntity)
                     .set("username", newUsername)
                     .build());
+        }
+    }
+
+    private void removeUserTokens(String username, Transaction txn) {
+        Query<Entity> query = Query.newEntityQueryBuilder()
+                .setKind("Token")
+                .setFilter(StructuredQuery.PropertyFilter.eq("username", username))
+                .build();
+        QueryResults<Entity> tokenResults = txn.run(query);
+
+        while (tokenResults.hasNext()) {
+            Entity tokenEntity = tokenResults.next();
+            txn.delete(tokenEntity.getKey());
         }
     }
 
@@ -169,6 +183,9 @@ public class ChangeAttributesResource {
                                 .entity(ChangeAttributesData.INVALID_STATE)
                                 .build();
                     }
+
+                    if (!AccountState.ACTIVE.getDescription().equals(inputState))
+                        removeUserTokens(targetUsername, txn);
 
                     userBuilder.set("user_state", inputState);
                 }
@@ -301,6 +318,9 @@ public class ChangeAttributesResource {
                                 .entity(ChangeAttributesData.INVALID_STATE)
                                 .build();
                     }
+
+                    if (!AccountState.ACTIVE.getDescription().equals(inputState))
+                        removeUserTokens(targetUsername, txn);
 
                     userBuilder.set("user_state", inputState);
                 }

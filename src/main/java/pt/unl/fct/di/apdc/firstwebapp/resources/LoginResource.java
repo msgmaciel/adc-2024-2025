@@ -1,10 +1,7 @@
 package pt.unl.fct.di.apdc.firstwebapp.resources;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 import java.util.logging.Logger;
 
 import org.apache.commons.codec.digest.DigestUtils;
@@ -15,24 +12,17 @@ import com.google.cloud.datastore.DatastoreOptions;
 import com.google.cloud.datastore.Entity;
 import com.google.cloud.datastore.Key;
 import com.google.cloud.datastore.KeyFactory;
-import com.google.cloud.datastore.Query;
-import com.google.cloud.datastore.QueryResults;
-import com.google.cloud.datastore.StructuredQuery.CompositeFilter;
-import com.google.cloud.datastore.StructuredQuery.OrderBy;
-import com.google.cloud.datastore.StructuredQuery.PropertyFilter;
 import com.google.cloud.datastore.Transaction;
 import com.google.gson.Gson;
 
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import pt.unl.fct.di.apdc.firstwebapp.enums.AccountState;
 import pt.unl.fct.di.apdc.firstwebapp.enums.Role;
 import pt.unl.fct.di.apdc.firstwebapp.util.AuthToken;
 import pt.unl.fct.di.apdc.firstwebapp.util.LoginData;
@@ -88,6 +78,13 @@ public class LoginResource {
 						.build();
 			}
 
+			if (!AccountState.ACTIVE.getDescription().equals(user.getString("user_state"))) {
+				txn.rollback();
+				LOG.warning(LOG_MESSAGE_LOGIN_ATTEMPT + username);
+				return Response.status(Status.FORBIDDEN)
+						.entity("Account must be activated by a BACKOFFICE or ADMIN account for the login operation to be available.")
+						.build();
+			}
 
 			String hashedPWD = user.getString(USER_PWD);
 			if (hashedPWD.equals(DigestUtils.sha512Hex(data.password))) {
